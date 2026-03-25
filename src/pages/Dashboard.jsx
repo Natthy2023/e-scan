@@ -83,15 +83,15 @@ const Dashboard = () => {
   ];
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] px-4 py-8">
-      <div className="max-w-6xl mx-auto space-y-8">
-        <div className="text-center">
-          <h1 className="text-3xl sm:text-4xl font-bold mb-2">{t('dashboard')}</h1>
-          <p className="text-gray-600 dark:text-gray-400">{t('trackImpact')}</p>
+    <div className="min-h-[calc(100vh-4rem)] w-full overflow-x-hidden px-3 sm:px-4 py-6 sm:py-8">
+      <div className="max-w-6xl mx-auto space-y-6 sm:space-y-8">
+        <div className="text-center px-2">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2">{t('dashboard')}</h1>
+          <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">{t('trackImpact')}</p>
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           {statCards.map((stat, index) => (
             <motion.div
               key={index}
@@ -103,14 +103,14 @@ const Dashboard = () => {
                 rotateY: 5,
                 transition: { duration: 0.3 }
               }}
-              className="bg-white dark:bg-black rounded-2xl p-6 border border-gray-200 dark:border-gray-700"
+              className="bg-white dark:bg-black rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-gray-200 dark:border-gray-700"
               style={{
                 boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
                 transform: 'perspective(1000px)',
               }}
             >
               <motion.div 
-                className={`w-12 h-12 ${stat.bg} rounded-xl flex items-center justify-center mb-4`}
+                className={`w-10 h-10 sm:w-12 sm:h-12 ${stat.bg} rounded-lg sm:rounded-xl flex items-center justify-center mb-3 sm:mb-4`}
                 animate={{ 
                   rotate: [0, 5, -5, 0]
                 }}
@@ -120,10 +120,10 @@ const Dashboard = () => {
                   delay: index * 0.2
                 }}
               >
-                <stat.icon className={`w-6 h-6 ${stat.color}`} />
+                <stat.icon className={`w-5 h-5 sm:w-6 sm:h-6 ${stat.color}`} />
               </motion.div>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{stat.label}</p>
-              <p className="text-2xl font-bold">{stat.value}</p>
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-1 truncate">{stat.label}</p>
+              <p className="text-lg sm:text-2xl font-bold truncate">{stat.value}</p>
             </motion.div>
           ))}
         </div>
@@ -135,7 +135,7 @@ const Dashboard = () => {
 
         {/* Scan History */}
         <motion.div 
-          className="bg-white dark:bg-black rounded-2xl p-6 border border-gray-200 dark:border-gray-700"
+          className="bg-white dark:bg-black rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-gray-200 dark:border-gray-700 overflow-hidden"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
@@ -143,7 +143,7 @@ const Dashboard = () => {
             boxShadow: '0 15px 40px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
           }}
         >
-          <h2 className="text-2xl font-bold mb-6">{t('scanHistory')}</h2>
+          <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">{t('scanHistory')}</h2>
           <ScanHistory scans={scans} onScanDeleted={handleScanDeleted} />
         </motion.div>
 
