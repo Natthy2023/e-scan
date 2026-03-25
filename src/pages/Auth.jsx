@@ -46,8 +46,13 @@ const Auth = () => {
       if (result) {
         navigate('/scan');
       }
-      // If null, redirect is happening (mobile), don't change loading state
+      // If null, either redirect is happening (mobile) or user cancelled
     } catch (error) {
+      // Only show error if it's not a user cancellation
+      if (error.code !== 'auth/popup-closed-by-user' && error.code !== 'auth/cancelled-popup-request') {
+        // Error already shown by auth function
+      }
+    } finally {
       setLoading(false);
     }
   };

@@ -40,12 +40,15 @@ export const signInWithGoogle = async () => {
     } else if (error.code === 'auth/popup-blocked') {
       toast.error('Popup blocked. Please allow popups for this site.');
     } else if (error.code === 'auth/popup-closed-by-user') {
-      toast.error('Sign-in cancelled.');
+      // User closed popup - don't show error, this is intentional
+      return null;
     } else if (error.code === 'auth/cancelled-popup-request') {
       // User opened multiple popups, ignore this error
       return null;
     } else if (error.code === 'auth/network-request-failed') {
       toast.error('Network error. Please check your connection.');
+    } else if (error.code === 'auth/internal-error') {
+      toast.error('Authentication error. Please try again or use email sign-in.');
     } else {
       toast.error('Sign-in failed. Please try again.');
     }

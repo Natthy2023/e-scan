@@ -188,13 +188,18 @@ IMPORTANT:
       throw error;
     }
     
-    if (error.message?.includes('API_KEY_INVALID') || error.message?.includes('API key')) {
-      toast.error('API configuration error. Please contact support.');
+    if (error.message?.includes('API_KEY_INVALID') || error.message?.includes('API key') || error.message?.includes('API configuration')) {
+      toast.error('Gemini API key is invalid or expired. Please get a new key from https://aistudio.google.com/apikey');
       throw error;
     }
     
     if (error.message?.includes('404') || error.message?.includes('not found')) {
-      toast.error('Service temporarily unavailable. Please try again later.');
+      toast.error('Gemini API service unavailable. Please try again later.');
+      throw error;
+    }
+    
+    if (error.message?.includes('403') || error.message?.includes('permission')) {
+      toast.error('API key does not have permission. Check API key restrictions in Google Cloud Console.');
       throw error;
     }
     
