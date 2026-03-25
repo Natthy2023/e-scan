@@ -5,15 +5,15 @@ class RateLimiter {
     this.queue = [];
     this.processing = false;
     this.lastRequestTime = 0;
-    this.minDelay = 1500; // 1.5 seconds between requests (optimized for 400+ users)
+    this.minDelay = 1000; // 1 second between requests (faster for better UX)
     this.retryAttempts = new Map();
-    this.maxRetries = 3;
-    this.baseBackoff = 3000; // 3 seconds base backoff
+    this.maxRetries = 2; // Reduced retries for faster failure
+    this.baseBackoff = 2000; // 2 seconds base backoff (reduced)
     
     // Circuit breaker pattern
     this.failureCount = 0;
-    this.failureThreshold = 5;
-    this.circuitBreakerTimeout = 30000; // 30 seconds
+    this.failureThreshold = 3; // Reduced threshold
+    this.circuitBreakerTimeout = 20000; // 20 seconds (reduced)
     this.circuitOpen = false;
     this.circuitOpenTime = 0;
     
@@ -44,7 +44,8 @@ class RateLimiter {
       if (this.circuitOpen) {
         const timeSinceOpen = Date.now() - this.circuitOpenTime;
         if (timeSinceOpen < this.circuitBreakerTimeout) {
-          reject(new Error('Service temporarily unavailable. Please try again in a moment.'));
+          const waitSeconds = Math.ceil((this.circuitBreakerTimeout - timeSinceOpen) / 1000);
+          reject(new Error(`Service temporarily unavailable. Please wait ${waitSeconds} seconds.`));
           return;
         } else {
           // Try to close circuit
@@ -58,6 +59,12 @@ class RateLimiter {
         this.queue.unshift(request);
       } else {
         this.queue.push(request);
+      }
+
+      // Show queue position if there are many requests
+      if (this.queue.length > 3) {
+        const position = this.queue.findIndex(r => r.id === request.id) + 1;
+        console.log(`Request queued. Position: ${position}/${this.queue.length}`);
       }
 
       this.processQueue();

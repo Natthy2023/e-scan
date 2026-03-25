@@ -12,22 +12,41 @@ import toast from 'react-hot-toast';
 
 const googleProvider = new GoogleAuthProvider();
 
-// Detect if device is mobile
+// Detect if device is mobile or tablet
 const isMobile = () => {
-  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  // Check user agent
+  const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+  const mobileRegex = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|mobile|CriOS/i;
+  
+  // Also check for touch support and small screen
+  const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+  const isSmallScreen = window.innerWidth <= 768;
+  
+  return mobileRegex.test(userAgent) || (isTouchDevice && isSmallScreen);
 };
 
 export const signInWithGoogle = async () => {
   try {
-    // Use redirect on mobile devices for better compatibility
+    // Always use redirect on mobile for better compatibility
     if (isMobile()) {
+      // Set persistence before redirect
       await signInWithRedirect(auth, googleProvider);
-      // The redirect will happen, and the result will be handled on return
+      // The redirect will happen, result handled on return
       return null;
     } else {
       // Use popup on desktop
-      const result = await signInWithPopup(auth, googleProvider);
-      return result.user;
+      try {
+        const result = await signInWithPopup(auth, googleProvider);
+        return result.user;
+      } catch (popupError) {
+        // If popup fails on desktop, try redirect as fallback
+        if (popupError.code === 'auth/popup-blocked') {
+          toast.error('Popup blocked. Redirecting...');
+          await signInWithRedirect(auth, googleProvider);
+          return null;
+        }
+        throw popupError;
+      }
     }
   } catch (error) {
     // Handle specific Firebase auth errors
@@ -38,7 +57,7 @@ export const signInWithGoogle = async () => {
         console.error('Domain not authorized in Firebase Console. Add your domain to Firebase → Authentication → Settings → Authorized domains');
       }
     } else if (error.code === 'auth/popup-blocked') {
-      toast.error('Popup blocked. Please allow popups for this site.');
+      // Already handled above
     } else if (error.code === 'auth/popup-closed-by-user') {
       // User closed popup - don't show error, this is intentional
       return null;

@@ -3,6 +3,14 @@ import { withRateLimit } from './rateLimiter';
 
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY || 'AIzaSyA4-xC7vWOqwlZoQyVrThIperlfdXnrlD0';
 
+// Test API key on load (development only)
+if (process.env.NODE_ENV === 'development') {
+  console.log('Gemini API Key configured:', API_KEY ? 'Yes (length: ' + API_KEY.length + ')' : 'No');
+  if (API_KEY && API_KEY.length > 10) {
+    console.log('API Key preview:', API_KEY.substring(0, 10) + '...');
+  }
+}
+
 // Sanitize user input to prevent XSS attacks
 const sanitizeInput = (input) => {
   if (typeof input !== 'string') return input;
@@ -52,6 +60,12 @@ export const analyzeImage = async (imageFile, language = 'en') => {
   // Wrap the entire function in rate limiter
   return withRateLimit(async () => {
     try {
+      // Check if API key exists
+      if (!API_KEY || API_KEY === 'undefined' || API_KEY === 'null') {
+        toast.error('Gemini API key is not configured. Please add VITE_GEMINI_API_KEY to environment variables.');
+        throw new Error('API_KEY_MISSING');
+      }
+
       // Validate file type
       const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
       if (!validTypes.includes(imageFile.type)) {
@@ -137,9 +151,20 @@ IMPORTANT:
       // Show detailed error in development
       if (process.env.NODE_ENV === 'development') {
         console.error('Gemini API Error:', errorMessage, errorData);
+        console.error('API Key (first 10 chars):', API_KEY?.substring(0, 10));
+        console.error('Response status:', response.status);
       }
       
-      throw new Error(errorMessage);
+      // User-friendly error messages
+      if (response.status === 400) {
+        throw new Error('Invalid request. Please try with a different image.');
+      } else if (response.status === 403) {
+        throw new Error('API key does not have permission. Check API key restrictions in Google Cloud Console.');
+      } else if (response.status === 404) {
+        throw new Error('Gemini model not found. The API endpoint may have changed.');
+      } else {
+        throw new Error(errorMessage);
+      }
     }
 
     const data = await response.json();
@@ -179,7 +204,7 @@ IMPORTANT:
     }
   } catch (error) {
     if (error.message?.includes('429') || error.message?.includes('quota') || error.message?.includes('rate limit')) {
-      toast.error('Too many requests. Please wait a moment and try again.');
+      toast.error('Too many requests. Your request is queued. Please wait...');
       throw new Error('RATE_LIMIT');
     }
     
@@ -188,8 +213,13 @@ IMPORTANT:
       throw error;
     }
     
+    if (error.message?.includes('API_KEY_MISSING')) {
+      toast.error('Gemini API key not configured. Please contact support.');
+      throw error;
+    }
+    
     if (error.message?.includes('API_KEY_INVALID') || error.message?.includes('API key') || error.message?.includes('API configuration')) {
-      toast.error('Gemini API key is invalid or expired. Please get a new key from https://aistudio.google.com/apikey');
+      toast.error('Gemini API key is invalid. Please contact support.');
       throw error;
     }
     
@@ -199,7 +229,12 @@ IMPORTANT:
     }
     
     if (error.message?.includes('403') || error.message?.includes('permission')) {
-      toast.error('API key does not have permission. Check API key restrictions in Google Cloud Console.');
+      toast.error('API permission error. Please contact support.');
+      throw error;
+    }
+    
+    if (error.message?.includes('Service temporarily unavailable')) {
+      toast.error(error.message);
       throw error;
     }
     
