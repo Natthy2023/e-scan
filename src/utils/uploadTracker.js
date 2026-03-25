@@ -1,7 +1,7 @@
 // Daily Upload Tracker for Gemini API Free Tier
 
 const STORAGE_KEY = 'escan_daily_uploads';
-const MAX_DAILY_UPLOADS = 10; // Strict limit for 100+ users per day (Gemini free tier: 1,500 requests/day)
+const MAX_DAILY_UPLOADS = 5; // Limit for each user per day (conservative for 100+ users)
 
 /**
  * Get today's date string (YYYY-MM-DD)
