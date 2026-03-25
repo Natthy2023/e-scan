@@ -76,3 +76,7 @@ Thumbs.db
 
 # Bundle analyzer
 stats.html
+
+# Documentation (except README.md)
+*.md
+!README.md
