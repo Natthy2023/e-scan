@@ -12,13 +12,9 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID || '1:306997629562:web:79bc178afd648c519ee1c3',
 };
 
-console.log('Firebase Config:', {
-  apiKey: firebaseConfig.apiKey ? '✓ Loaded' : '✗ Missing',
-  authDomain: firebaseConfig.authDomain,
-  projectId: firebaseConfig.projectId,
-});
-
+// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
+
