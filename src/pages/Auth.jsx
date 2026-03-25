@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Mail, Lock, Chrome } from 'lucide-react';
-import { signInWithGoogle, signInWithEmail, signUpWithEmail } from '../firebase/auth';
+import { signInWithGoogle, signInWithEmail, signUpWithEmail, handleRedirectResult } from '../firebase/auth';
 import { useAuth } from '../context/AuthContext';
 import { getTranslation } from '../utils/translations';
 import toast from 'react-hot-toast';
@@ -13,17 +13,41 @@ const Auth = () => {
   const [isSignUp, setIsSignUp] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { language } = useAuth();
+  const { language, user } = useAuth();
   const t = (key) => getTranslation(language, key);
+
+  // Handle redirect result on component mount (for mobile Google sign-in)
+  useEffect(() => {
+    const checkRedirectResult = async () => {
+      setLoading(true);
+      const result = await handleRedirectResult();
+      if (result) {
+        navigate('/scan');
+      }
+      setLoading(false);
+    };
+    
+    checkRedirectResult();
+  }, [navigate]);
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      navigate('/scan');
+    }
+  }, [user, navigate]);
 
   const handleGoogleSignIn = async () => {
     setLoading(true);
     try {
-      await signInWithGoogle();
-      navigate('/scan');
+      const result = await signInWithGoogle();
+      // On desktop (popup), result will be returned immediately
+      // On mobile (redirect), result will be null and user will be redirected
+      if (result) {
+        navigate('/scan');
+      }
+      // If null, redirect is happening (mobile), don't change loading state
     } catch (error) {
-      console.error(error);
-    } finally {
       setLoading(false);
     }
   };
@@ -40,7 +64,7 @@ const Auth = () => {
       }
       navigate('/scan');
     } catch (error) {
-      console.error(error);
+      // Error already handled by auth functions
     } finally {
       setLoading(false);
     }

@@ -46,7 +46,7 @@ export const AuthProvider = ({ children }) => {
             setUserProfile(initialProfile);
           }
         } catch (error) {
-          console.error('Error loading profile:', error);
+          // Silently fail - profile will be created on next update
         }
       } else {
         setUserProfile(null);
@@ -61,7 +61,9 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     localStorage.setItem('language', language);
     if (user) {
-      updateUserProfile(user.uid, { language }).catch(console.error);
+      updateUserProfile(user.uid, { language }).catch(() => {
+        // Silently fail
+      });
     }
   }, [language, user]);
 
@@ -69,7 +71,9 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem('theme', theme);
     document.documentElement.classList.toggle('dark', theme === 'dark');
     if (user) {
-      updateUserProfile(user.uid, { theme }).catch(console.error);
+      updateUserProfile(user.uid, { theme }).catch(() => {
+        // Silently fail
+      });
     }
   }, [theme, user]);
 

@@ -1,5 +1,7 @@
 import {
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   GoogleAuthProvider,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
@@ -10,13 +12,67 @@ import toast from 'react-hot-toast';
 
 const googleProvider = new GoogleAuthProvider();
 
+// Detect if device is mobile
+const isMobile = () => {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+};
+
 export const signInWithGoogle = async () => {
   try {
-    const result = await signInWithPopup(auth, googleProvider);
-    return result.user;
+    // Use redirect on mobile devices for better compatibility
+    if (isMobile()) {
+      await signInWithRedirect(auth, googleProvider);
+      // The redirect will happen, and the result will be handled on return
+      return null;
+    } else {
+      // Use popup on desktop
+      const result = await signInWithPopup(auth, googleProvider);
+      return result.user;
+    }
   } catch (error) {
-    toast.error(error.message);
+    // Handle specific Firebase auth errors
+    if (error.code === 'auth/unauthorized-domain') {
+      toast.error('Authentication error. Please contact support.');
+      // Keep this console.error for admin debugging
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Domain not authorized in Firebase Console. Add your domain to Firebase → Authentication → Settings → Authorized domains');
+      }
+    } else if (error.code === 'auth/popup-blocked') {
+      toast.error('Popup blocked. Please allow popups for this site.');
+    } else if (error.code === 'auth/popup-closed-by-user') {
+      toast.error('Sign-in cancelled.');
+    } else if (error.code === 'auth/cancelled-popup-request') {
+      // User opened multiple popups, ignore this error
+      return null;
+    } else if (error.code === 'auth/network-request-failed') {
+      toast.error('Network error. Please check your connection.');
+    } else {
+      toast.error('Sign-in failed. Please try again.');
+    }
     throw error;
+  }
+};
+
+// Handle redirect result (call this on app initialization)
+export const handleRedirectResult = async () => {
+  try {
+    const result = await getRedirectResult(auth);
+    if (result) {
+      return result.user;
+    }
+    return null;
+  } catch (error) {
+    if (error.code === 'auth/unauthorized-domain') {
+      toast.error('Authentication error. Please contact support.');
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Domain not authorized in Firebase Console');
+      }
+    } else if (error.code === 'auth/network-request-failed') {
+      toast.error('Network error. Please check your connection.');
+    } else if (error.code !== 'auth/popup-closed-by-user') {
+      toast.error('Sign-in failed. Please try again.');
+    }
+    return null;
   }
 };
 
@@ -25,7 +81,20 @@ export const signInWithEmail = async (email, password) => {
     const result = await signInWithEmailAndPassword(auth, email, password);
     return result.user;
   } catch (error) {
-    toast.error(error.message);
+    // Handle specific Firebase auth errors
+    if (error.code === 'auth/user-not-found') {
+      toast.error('No account found with this email.');
+    } else if (error.code === 'auth/wrong-password') {
+      toast.error('Incorrect password.');
+    } else if (error.code === 'auth/invalid-email') {
+      toast.error('Invalid email address.');
+    } else if (error.code === 'auth/user-disabled') {
+      toast.error('This account has been disabled.');
+    } else if (error.code === 'auth/too-many-requests') {
+      toast.error('Too many failed attempts. Please try again later.');
+    } else {
+      toast.error('Sign-in failed. Please try again.');
+    }
     throw error;
   }
 };
@@ -35,7 +104,18 @@ export const signUpWithEmail = async (email, password) => {
     const result = await createUserWithEmailAndPassword(auth, email, password);
     return result.user;
   } catch (error) {
-    toast.error(error.message);
+    // Handle specific Firebase auth errors
+    if (error.code === 'auth/email-already-in-use') {
+      toast.error('An account with this email already exists.');
+    } else if (error.code === 'auth/invalid-email') {
+      toast.error('Invalid email address.');
+    } else if (error.code === 'auth/weak-password') {
+      toast.error('Password should be at least 6 characters.');
+    } else if (error.code === 'auth/operation-not-allowed') {
+      toast.error('Email/password sign-up is not enabled.');
+    } else {
+      toast.error('Sign-up failed. Please try again.');
+    }
     throw error;
   }
 };

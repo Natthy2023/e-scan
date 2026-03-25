@@ -41,7 +41,6 @@ const Scan = () => {
         setResult(translated);
       } catch (error) {
         // Silently fail - keep original result
-        console.error('Translation failed:', error);
       } finally {
         setTranslating(false);
       }
@@ -163,6 +162,7 @@ const Scan = () => {
                 ref={fileInputRef}
                 type="file"
                 accept="image/*"
+                capture="environment"
                 onChange={handleFileChange}
                 className="hidden"
               />

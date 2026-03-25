@@ -164,7 +164,6 @@ self.addEventListener('sync', (event) => {
 
 async function syncScans() {
   // Placeholder for syncing offline scans when back online
-  console.log('Syncing offline scans...');
 }
 
 // Push notifications (future enhancement)

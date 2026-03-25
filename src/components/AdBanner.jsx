@@ -7,7 +7,7 @@ const AdBanner = () => {
         (window.adsbygoogle = window.adsbygoogle || []).push({});
       }
     } catch (error) {
-      console.error('AdSense error:', error);
+      // Silently fail - AdSense will handle errors
     }
   }, []);
 

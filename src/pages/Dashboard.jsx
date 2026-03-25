@@ -25,7 +25,7 @@ const Dashboard = () => {
       setScans(scansData);
       setStats(statsData);
     } catch (error) {
-      console.error(error);
+      // Error already handled by firestore functions
     } finally {
       setLoading(false);
     }

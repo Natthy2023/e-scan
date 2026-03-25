@@ -1,21 +1,11 @@
 import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
-import { visualizer } from 'rollup-plugin-visualizer'
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   
   return {
-    plugins: [
-      react(),
-      // Bundle analyzer (only in build mode)
-      mode === 'production' && visualizer({
-        filename: './dist/stats.html',
-        open: false,
-        gzipSize: true,
-        brotliSize: true,
-      }),
-    ].filter(Boolean),
+    plugins: [react()],
     
     define: {
       'import.meta.env.VITE_FIREBASE_API_KEY': JSON.stringify(env.VITE_FIREBASE_API_KEY),
@@ -30,11 +20,10 @@ export default defineConfig(({ mode }) => {
     // Build optimizations
     build: {
       target: 'es2015',
-      minify: 'esbuild', // Use esbuild instead of terser
+      minify: 'esbuild',
       rollupOptions: {
         output: {
           manualChunks: {
-            // Vendor splitting for better caching
             'react-vendor': ['react', 'react-dom', 'react-router-dom'],
             'firebase-vendor': ['firebase/app', 'firebase/auth', 'firebase/firestore'],
             'ui-vendor': ['framer-motion', 'lucide-react', 'react-hot-toast'],
@@ -42,15 +31,13 @@ export default defineConfig(({ mode }) => {
         },
       },
       chunkSizeWarningLimit: 1000,
-      sourcemap: false, // Disable sourcemaps in production for smaller bundle
+      sourcemap: false,
     },
     
-    // Performance optimizations
     optimizeDeps: {
       include: ['react', 'react-dom', 'react-router-dom', 'firebase/app', 'firebase/auth', 'firebase/firestore'],
     },
     
-    // Server configuration for development
     server: {
       port: 3000,
       strictPort: false,

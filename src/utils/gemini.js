@@ -131,8 +131,15 @@ IMPORTANT:
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error?.message || 'API request failed');
+      const errorData = await response.json().catch(() => ({}));
+      const errorMessage = errorData.error?.message || `API request failed with status ${response.status}`;
+      
+      // Show detailed error in development
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Gemini API Error:', errorMessage, errorData);
+      }
+      
+      throw new Error(errorMessage);
     }
 
     const data = await response.json();
@@ -172,8 +179,7 @@ IMPORTANT:
     }
   } catch (error) {
     if (error.message?.includes('429') || error.message?.includes('quota') || error.message?.includes('rate limit')) {
-      const friendlyMessage = 'Processing your request. This may take a moment due to high demand...';
-      toast.loading(friendlyMessage, { duration: 3000 });
+      toast.error('Too many requests. Please wait a moment and try again.');
       throw new Error('RATE_LIMIT');
     }
     
@@ -182,7 +188,24 @@ IMPORTANT:
       throw error;
     }
     
+    if (error.message?.includes('API_KEY_INVALID') || error.message?.includes('API key')) {
+      toast.error('API configuration error. Please contact support.');
+      throw error;
+    }
+    
+    if (error.message?.includes('404') || error.message?.includes('not found')) {
+      toast.error('Service temporarily unavailable. Please try again later.');
+      throw error;
+    }
+    
+    // Generic error
     toast.error('Failed to analyze image. Please try again.');
+    
+    // Log error in development
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Analysis error:', error);
+    }
+    
     throw error;
   }
   }, 'high'); // High priority for image analysis

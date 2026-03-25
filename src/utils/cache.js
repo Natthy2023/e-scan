@@ -58,7 +58,7 @@ class CacheManager {
         return data.data;
       }
     } catch (error) {
-      console.error('Cache get error:', error);
+      // Silently fail and return null
     }
 
     return null;
@@ -81,7 +81,7 @@ class CacheManager {
       await this.ensureDB();
       await this.setInDB(cacheEntry);
     } catch (error) {
-      console.error('Cache set error:', error);
+      // Silently fail if IndexedDB is not available
     }
   }
 
@@ -141,7 +141,6 @@ class CacheManager {
         request.onerror = () => reject(request.error);
       });
     } catch (error) {
-      console.error('Get user scans error:', error);
       return [];
     }
   }
@@ -170,7 +169,7 @@ class CacheManager {
         request.onerror = () => reject(request.error);
       });
     } catch (error) {
-      console.error('Clear old entries error:', error);
+      // Silently fail
     }
   }
 
@@ -189,7 +188,7 @@ class CacheManager {
         request.onerror = () => reject(request.error);
       });
     } catch (error) {
-      console.error('Clear all error:', error);
+      // Silently fail
     }
   }
 
@@ -220,7 +219,6 @@ class CacheManager {
         countRequest.onerror = () => reject(countRequest.error);
       });
     } catch (error) {
-      console.error('Get stats error:', error);
       return {
         memorySize: this.memoryCache.size,
         dbSize: 0,
@@ -235,7 +233,9 @@ class CacheManager {
 const cacheManager = new CacheManager();
 
 // Clean old entries on initialization
-cacheManager.clearOldEntries().catch(console.error);
+cacheManager.clearOldEntries().catch(() => {
+  // Silently fail
+});
 
 export default cacheManager;
 

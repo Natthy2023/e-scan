@@ -1,80 +1,209 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { X, Camera as CameraIcon, RotateCcw } from 'lucide-react';
+import { X, Camera as CameraIcon, RotateCcw, AlertCircle } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 const CameraCapture = ({ onCapture, onClose }) => {
   const videoRef = useRef(null);
   const [stream, setStream] = useState(null);
   const [error, setError] = useState(null);
   const [facingMode, setFacingMode] = useState('environment');
+  const [permissionDenied, setPermissionDenied] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [retryTrigger, setRetryTrigger] = useState(0);
 
   const stopCamera = useCallback(() => {
     if (stream) {
       stream.getTracks().forEach(track => track.stop());
+      setStream(null);
     }
   }, [stream]);
 
-  const startCamera = useCallback(async (mode = 'environment') => {
-    try {
-      const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: mode },
-        audio: false,
-      });
-      setStream(mediaStream);
-      if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream;
-      }
-    } catch (err) {
-      console.error('Camera error:', err);
-      setError('Unable to access camera. Please check permissions.');
-    }
-  }, []);
-
   useEffect(() => {
-    startCamera(facingMode);
-    return () => {
-      stopCamera();
+    let mounted = true;
+    
+    const initCamera = async () => {
+      if (!mounted) return;
+      
+      setIsLoading(true);
+      setError(null);
+      setPermissionDenied(false);
+
+      try {
+        // Check if mediaDevices is supported
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          throw new Error('Camera not supported on this device');
+        }
+
+        // Use simpler constraints for faster startup
+        const constraints = {
+          video: {
+            facingMode: facingMode,
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          },
+          audio: false,
+        };
+
+        const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+        
+        if (!mounted) {
+          mediaStream.getTracks().forEach(track => track.stop());
+          return;
+        }
+        
+        setStream(mediaStream);
+        setIsLoading(false);
+        
+        if (videoRef.current) {
+          videoRef.current.srcObject = mediaStream;
+        }
+      } catch (err) {
+        if (!mounted) return;
+        
+        setIsLoading(false);
+        
+        // Handle specific errors
+        if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+          setPermissionDenied(true);
+          setError('Camera permission denied. Please allow camera access in your browser settings.');
+        } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+          setError('No camera found on this device.');
+        } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+          setError('Camera is already in use by another application.');
+        } else if (err.name === 'OverconstrainedError') {
+          // Try again with basic constraints
+          try {
+            const basicStream = await navigator.mediaDevices.getUserMedia({
+              video: { facingMode: facingMode },
+              audio: false,
+            });
+            
+            if (!mounted) {
+              basicStream.getTracks().forEach(track => track.stop());
+              return;
+            }
+            
+            setStream(basicStream);
+            setIsLoading(false);
+            if (videoRef.current) {
+              videoRef.current.srcObject = basicStream;
+            }
+          } catch (basicErr) {
+            if (mounted) {
+              setError('Unable to access camera. Please check permissions.');
+            }
+          }
+        } else if (err.message === 'Camera not supported on this device') {
+          setError('Camera is not supported on this browser. Please use a modern browser like Chrome, Safari, or Firefox.');
+        } else {
+          setError('Unable to access camera. Please check permissions and try again.');
+        }
+      }
     };
-  }, [facingMode, startCamera, stopCamera]);
+    
+    initCamera();
+    
+    return () => {
+      mounted = false;
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, [facingMode, retryTrigger]); // Depend on facingMode and retryTrigger
 
   const capturePhoto = useCallback(() => {
-    if (!videoRef.current) return;
+    if (!videoRef.current || !stream) return;
 
-    const canvas = document.createElement('canvas');
-    canvas.width = videoRef.current.videoWidth;
-    canvas.height = videoRef.current.videoHeight;
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(videoRef.current, 0, 0);
-
-    canvas.toBlob((blob) => {
-      if (blob) {
-        const file = new File([blob], 'camera-photo.jpg', { type: 'image/jpeg' });
-        stopCamera();
-        onClose();
-        // Call onCapture after closing to ensure proper state management
-        setTimeout(() => {
-          onCapture(file);
-        }, 100);
+    try {
+      const canvas = document.createElement('canvas');
+      canvas.width = videoRef.current.videoWidth;
+      canvas.height = videoRef.current.videoHeight;
+      
+      if (canvas.width === 0 || canvas.height === 0) {
+        toast.error('Camera not ready. Please wait a moment.');
+        return;
       }
-    }, 'image/jpeg', 0.9);
-  }, [onCapture, onClose, stopCamera]);
+      
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(videoRef.current, 0, 0);
+
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const file = new File([blob], 'camera-photo.jpg', { type: 'image/jpeg' });
+          stopCamera();
+          onClose();
+          // Call onCapture after closing to ensure proper state management
+          setTimeout(() => {
+            onCapture(file);
+          }, 100);
+        } else {
+          toast.error('Failed to capture photo. Please try again.');
+        }
+      }, 'image/jpeg', 0.9);
+    } catch (error) {
+      toast.error('Failed to capture photo. Please try again.');
+    }
+  }, [onCapture, onClose, stopCamera, stream]);
 
   const switchCamera = useCallback(() => {
+    // Stop current stream
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      setStream(null);
+    }
+    // Toggle facing mode
     setFacingMode(prev => prev === 'user' ? 'environment' : 'user');
-  }, []);
+  }, [stream]);
 
   if (error) {
     return (
-      <div className="fixed inset-0 z-50 bg-black flex items-center justify-center p-4">
-        <div className="bg-white dark:bg-black rounded-2xl p-6 max-w-md w-full border dark:border-gray-800">
-          <p className="text-red-500 mb-4">{error}</p>
-          <button
-            onClick={onClose}
-            className="w-full px-4 py-2 bg-primary text-white rounded-lg"
-          >
-            Close
-          </button>
-        </div>
+      <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="bg-white dark:bg-black rounded-2xl p-6 max-w-md w-full border dark:border-gray-800"
+        >
+          <div className="flex items-start gap-3 mb-4">
+            <AlertCircle className="w-6 h-6 text-red-500 flex-shrink-0 mt-1" />
+            <div>
+              <h3 className="font-semibold text-lg mb-2">Camera Access Error</h3>
+              <p className="text-red-500 text-sm mb-4">{error}</p>
+              
+              {permissionDenied && (
+                <div className="bg-gray-100 dark:bg-gray-900 rounded-lg p-3 text-xs space-y-2">
+                  <p className="font-semibold">To enable camera:</p>
+                  <ul className="list-disc list-inside space-y-1 text-gray-600 dark:text-gray-400">
+                    <li>Click the lock/info icon in your browser's address bar</li>
+                    <li>Find "Camera" permissions</li>
+                    <li>Select "Allow"</li>
+                    <li>Refresh the page and try again</li>
+                  </ul>
+                </div>
+              )}
+            </div>
+          </div>
+          
+          <div className="flex gap-2">
+            {!permissionDenied && (
+              <button
+                onClick={() => {
+                  setError(null);
+                  setRetryTrigger(prev => prev + 1); // Trigger useEffect to restart camera
+                }}
+                className="flex-1 px-4 py-2 bg-primary text-white rounded-lg hover:bg-emerald-600 transition-colors"
+              >
+                Try Again
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              className="flex-1 px-4 py-2 bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-gray-700 transition-colors"
+            >
+              Close
+            </button>
+          </div>
+        </motion.div>
       </div>
     );
   }
@@ -86,11 +215,22 @@ const CameraCapture = ({ onCapture, onClose }) => {
       exit={{ opacity: 0 }}
       className="fixed inset-0 z-50 bg-black"
     >
+      {/* Loading Overlay */}
+      {isLoading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black z-10">
+          <div className="text-center">
+            <CameraIcon className="w-16 h-16 text-white animate-pulse mx-auto mb-4" />
+            <p className="text-white text-lg">Starting camera...</p>
+          </div>
+        </div>
+      )}
+
       {/* Video Preview */}
       <video
         ref={videoRef}
         autoPlay
         playsInline
+        muted
         className="w-full h-full object-cover"
       />
 
