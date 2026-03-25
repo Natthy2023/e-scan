@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Mail, Github, Linkedin, Heart } from 'lucide-react';
+import { Mail, Heart } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getTranslation } from '../utils/translations';
 
@@ -60,26 +60,6 @@ const Footer = () => {
                 <Mail className="w-4 h-4" />
                 natnaelasfaw2023@gmail.com
               </a>
-              <div className="flex gap-4 mt-4">
-                <a
-                  href="https://github.com/natnaelasfaw"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-gray-600 dark:text-gray-400 hover:text-primary transition-colors"
-                  aria-label="GitHub"
-                >
-                  <Github className="w-5 h-5" />
-                </a>
-                <a
-                  href="https://linkedin.com/in/natnaelasfaw"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-gray-600 dark:text-gray-400 hover:text-primary transition-colors"
-                  aria-label="LinkedIn"
-                >
-                  <Linkedin className="w-5 h-5" />
-                </a>
-              </div>
             </div>
           </div>
         </div>
