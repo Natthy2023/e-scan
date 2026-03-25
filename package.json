@@ -1,0 +1,37 @@
+{
+  "name": "e-scan",
+  "private": true,
+  "version": "1.0.0",
+  "description": "ኢ - Scan: AI-powered recycling assistant for Ethiopia",
+  "type": "module",
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "analyze": "vite build && open dist/stats.html"
+  },
+  "dependencies": {
+    "canvas-confetti": "^1.9.2",
+    "firebase": "^10.7.1",
+    "framer-motion": "^11.0.0",
+    "lucide-react": "^0.460.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-hot-toast": "^2.4.1",
+    "react-router-dom": "^6.20.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.16",
+    "postcss": "^8.4.32",
+    "rollup-plugin-visualizer": "^5.12.0",
+    "tailwindcss": "^3.3.6",
+    "vite": "^6.0.0"
+  }
+}

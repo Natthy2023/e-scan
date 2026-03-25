@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Gemini API</title>
+</head>
+<body>
+    <h1>Gemini API Test</h1>
+    <p>Check the console for results</p>
+    
+    <script type="module">
+        import { GoogleGenerativeAI } from 'https://esm.run/@google/generative-ai';
+        
+        const API_KEY = 'AIzaSyDm2qtHdl7GUAsav_ZEDyopoKTVtk5xROk';
+        const genAI = new GoogleGenerativeAI(API_KEY);
+        
+        async function testAPI() {
+            try {
+                console.log('Testing Gemini API...');
+                const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+                const result = await model.generateContent('Say hello');
+                const response = await result.response;
+                console.log('Success!', response.text());
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+        
+        testAPI();
+    </script>
+</body>
+</html>

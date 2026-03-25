@@ -1,0 +1,65 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions for validation
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function validateImageSize() {
+      // Limit base64 image to ~5MB (base64 is ~33% larger than binary)
+      return request.resource.data.imageUrl.size() < 6700000;
+    }
+    
+    function validateScanData() {
+      return request.resource.data.keys().hasAll(['userId', 'itemName', 'isRecyclable', 'createdAt'])
+        && request.resource.data.userId is string
+        && request.resource.data.itemName is string
+        && request.resource.data.isRecyclable is bool
+        && request.resource.data.createdAt is timestamp;
+    }
+    
+    function rateLimitCheck() {
+      // Allow max 20 writes per user per hour (more lenient than client-side 15/day)
+      return request.time > resource.data.createdAt + duration.value(3, 'm');
+    }
+    
+    // Users collection - users can read/write their own profile
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) 
+        && request.resource.data.keys().hasAll(['createdAt'])
+        && request.resource.data.createdAt is timestamp;
+      allow update: if isOwner(userId)
+        && request.resource.data.keys().hasAll(['createdAt']); // Prevent removing createdAt
+      allow delete: if isOwner(userId);
+    }
+    
+    // Scans collection - users can read/write their own scans with validation
+    match /scans/{scanId} {
+      allow read: if isAuthenticated() && isOwner(resource.data.userId);
+      
+      allow create: if isAuthenticated() 
+        && isOwner(request.resource.data.userId)
+        && validateScanData()
+        && validateImageSize();
+      
+      allow update: if isAuthenticated() 
+        && isOwner(resource.data.userId)
+        && request.resource.data.userId == resource.data.userId // Prevent userId change
+        && validateImageSize();
+      
+      allow delete: if isAuthenticated() && isOwner(resource.data.userId);
+    }
+    
+    // Deny all other access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
