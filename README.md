@@ -30,15 +30,15 @@ An AI-powered recycling assistant for Ethiopia that helps users identify waste i
 
 ### 1. Install Dependencies
 
-\`\`\`bash
+```bash
 npm install
-\`\`\`
+```
 
 ### 2. Configure Environment Variables
 
 Create a \`.env\` file in the root directory:
 
-\`\`\`env
+```env
 VITE_FIREBASE_API_KEY=your_firebase_api_key
 VITE_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
 VITE_FIREBASE_PROJECT_ID=your_project_id
@@ -68,15 +68,15 @@ VITE_GEMINI_API_KEY=your_gemini_api_key
 
 ### 6. Run Development Server
 
-\`\`\`bash
+```bash
 npm run dev
-\`\`\`
+```
 
 ### 7. Build for Production
 
-\`\`\`bash
+```bash
 npm run build
-\`\`\`
+```
 
 ## Deployment
 
@@ -85,13 +85,13 @@ npm run build
 1. Push your code to GitHub
 2. Import project in Netlify
 3. Configure build settings:
-   - Build command: `npm run build`
-   - Publish directory: `dist`
+   - Build command: ```npm run build```
+   - Publish directory: ```dist```
    - Node version: 20
 4. Add environment variables in Netlify dashboard
 5. Deploy
 
-The `netlify.toml` file is already configured with:
+The ```netlify.toml``` file is already configured with:
 - Security headers (CSP, XSS protection, etc.)
 - Redirects for SPA routing
 - Cache optimization
@@ -99,19 +99,19 @@ The `netlify.toml` file is already configured with:
 
 ### Firebase Hosting
 
-\`\`\`bash
+```bash
 npm install -g firebase-tools
 firebase login
 firebase init hosting
 npm run build
 firebase deploy
-\`\`\`
+```
 
 ## Firestore Security Rules
 
 Add these rules in Firebase Console:
 
-\`\`\`javascript
+```javascript
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -125,7 +125,7 @@ service cloud.firestore {
     }
   }
 }
-\`\`\`
+```
 
 ## Usage
 
